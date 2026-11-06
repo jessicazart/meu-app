@@ -1,0 +1,9 @@
+{
+  "name": "Aquecimento de hoje",
+  "short_name": "Aquecimento",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f1ecff",
+  "theme_color": "#312e81",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}
