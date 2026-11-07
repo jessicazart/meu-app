@@ -1,6 +1,6 @@
 # Aquecimento de hoje
 
-App web (feito primeiro para celular) que controla o aquecimento diário das contas de **Instagram** e **TikTok** de cada app.
+App web (feito primeiro para celular) que controla o aquecimento diário das contas de cada app: **Instagram**, **TikTok**, **Snapchat**, **Facebook** e **YouTube**. Cada app tem só as contas que você escolher (toque em "+ Adicionar conta" ou no ✕ da conta para remover).
 O login é por e-mail e tudo fica salvo no **Supabase**, então o celular e o computador mostram sempre os mesmos dados ("Sincronizado ✓").
 
 São arquivos estáticos (HTML, CSS e JS), sem etapa de build:

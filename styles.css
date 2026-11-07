@@ -229,3 +229,21 @@ input:focus { border-color: var(--primary); outline: none; }
 
 .foot { margin-top: 32px; text-align: center; color: var(--ink-2); font-size: .9rem; display: grid; gap: 6px; justify-items: center; }
 .foot .btn { min-height: 44px; }
+
+/* ---------- Contas por app (adicionar / remover) ---------- */
+.acc-right { display: inline-flex; align-items: center; gap: 4px; }
+.acc-remove {
+  min-width: 44px; min-height: 44px; margin: -10px -10px -10px 0; padding: 0 10px;
+  border: 0; border-radius: 12px; background: transparent; color: var(--ink-2);
+  font-weight: 700; font-size: .95rem; cursor: pointer; opacity: .7;
+}
+.acc-remove:hover { opacity: 1; background: var(--soft); }
+.acc-remove.confirm { opacity: 1; background: var(--red); color: #fff; font-size: .82rem; }
+.add-acc { width: 100%; margin-top: 12px; background: transparent; box-shadow: inset 0 0 0 2px var(--line); color: var(--primary); }
+@media (prefers-color-scheme: dark) { .add-acc { color: var(--ink); } }
+.add-acc-panel { margin-top: 12px; padding: 12px; border-radius: 16px; background: var(--card-2); display: grid; gap: 10px; }
+.add-acc-panel p { margin: 0; font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { background: var(--card); box-shadow: inset 0 0 0 2px var(--line); color: var(--ink); }
+.chip svg { width: 20px; height: 20px; flex: none; }
+.accounts > .empty { margin: 0; }

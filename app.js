@@ -3,16 +3,32 @@
 import { CONFIG } from './config.js';
 
 const GOAL = 30 * 60 * 1000;               // meta por conta: 30 min
-const ACCOUNTS = [
+// Plataformas disponíveis. Cada app escolhe quais contas tem (dá para adicionar e remover).
+const PLATFORMS = [
   { key: 'ig', label: 'Instagram' },
   { key: 'tt', label: 'TikTok' },
+  { key: 'sc', label: 'Snapchat' },
+  { key: 'fb', label: 'Facebook' },
+  { key: 'yt', label: 'YouTube' },
 ];
+const PLATFORM = Object.fromEntries(PLATFORMS.map((p) => [p.key, p]));
+const DEFAULT_ACCOUNTS = ['ig', 'tt'];   // contas de um app novo
+/** Contas (plataformas) de um app, na ordem do catálogo. Apps antigos, sem a lista, têm Instagram e TikTok. */
+function appAccounts(app) {
+  const keys = Array.isArray(app?.accounts) ? app.accounts : DEFAULT_ACCOUNTS;
+  return PLATFORMS.filter((p) => keys.includes(p.key));
+}
+/** Retrato dos apps (nome e contas) para salvar no histórico do dia. */
+const snapApps = () => S.profile.apps.map((app) => ({ id: app.id, name: app.name, accounts: appAccounts(app).map((p) => p.key) }));
 // Apps iniciais — troque pelos seus (também dá para renomear tocando no nome).
 const DEFAULT_APPS = ['App 1', 'App 2', 'App 3', 'App 4'];
 const HISTORY_DAYS = 30;
 
 const ICONS = {
   ig: '<svg viewBox="0 0 24 24" aria-hidden="true"><defs><linearGradient id="igg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#f9a825"/><stop offset=".5" stop-color="#e8338a"/><stop offset="1" stop-color="#6a3cf0"/></linearGradient></defs><rect x="2" y="2" width="20" height="20" rx="6" fill="url(#igg)"/><circle cx="12" cy="12" r="4.3" fill="none" stroke="#fff" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.3" fill="#fff"/></svg>',
+  sc: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="#fffc00"/><path d="M12 5.2c2.3 0 3.9 1.7 3.9 3.9v1.6l1.2-.4c.4-.1.8.3.5.7-.3.4-1 .7-1.6.9.4 1.2 1.4 2.2 2.6 2.5.3.1.3.5 0 .6-.5.2-1.1.3-1.6.4-.1.4-.2.8-.4.9-.5.1-1-.2-1.8 0-.9.2-1.5 1.3-2.8 1.3s-1.9-1.1-2.8-1.3c-.8-.2-1.3.1-1.8 0-.2-.1-.3-.5-.4-.9-.5-.1-1.1-.2-1.6-.4-.3-.1-.3-.5 0-.6 1.2-.3 2.2-1.3 2.6-2.5-.6-.2-1.3-.5-1.6-.9-.3-.4.1-.8.5-.7l1.2.4V9.1c0-2.2 1.6-3.9 3.9-3.9z" fill="#fff" stroke="#111" stroke-width=".9" stroke-linejoin="round"/></svg>',
+  fb: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="#1877f2"/><path d="M13.3 22v-7.2h2.4l.4-2.8h-2.8v-1.8c0-.8.3-1.4 1.4-1.4h1.5V6.3c-.3 0-1.2-.1-2.2-.1-2.1 0-3.5 1.3-3.5 3.6V12H8.1v2.8h2.4V22z" fill="#fff"/></svg>',
+  yt: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="#ff0000"/><path d="M10 8.6v6.8l5.8-3.4z" fill="#fff"/></svg>',
   tt: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="#111"/><path d="M14.6 5.5c.4 1.7 1.6 2.9 3.4 3.1v2.4c-1.3 0-2.4-.4-3.4-1.1v4.9a4.3 4.3 0 1 1-4.3-4.3h.5v2.5h-.5a1.8 1.8 0 1 0 1.8 1.8V5.5z" fill="#fff"/><path d="M14.6 5.5c.4 1.7 1.6 2.9 3.4 3.1" fill="none" stroke="#25f4ee" stroke-width=".8" opacity=".9"/></svg>',
 };
 
@@ -115,7 +131,7 @@ function loadCache() {
 }
 function defaultProfile() {
   return {
-    apps: DEFAULT_APPS.map((name) => ({ id: newId(), name })),
+    apps: DEFAULT_APPS.map((name) => ({ id: newId(), name, accounts: [...DEFAULT_ACCOUNTS] })),
     first_day: dayKey(),
     updated_at: Date.now(),
   };
@@ -163,7 +179,7 @@ function scheduleFlush(delay = 350) {
 }
 
 function rowFor(day) {
-  if (day === S.today.day) return { day, apps: S.profile.apps.map(({ id, name }) => ({ id, name })), accounts: S.today.accounts };
+  if (day === S.today.day) return { day, apps: snapApps(), accounts: S.today.accounts };
   const h = S.history[day];
   return h ? { day, apps: h.apps, accounts: h.accounts } : null;
 }
@@ -321,7 +337,7 @@ function rollover() {
   const now = Date.now();
   forEachAcc(old, (a) => { if (a.start) { a.ms = elapsed(a, end); a.start = null; a.u = now; } });
   if (hasActivity(old)) {
-    S.history[old.day] = { day: old.day, apps: S.profile.apps.map(({ id, name }) => ({ id, name })), accounts: old.accounts };
+    S.history[old.day] = { day: old.day, apps: snapApps(), accounts: old.accounts };
     pendingDays.add(old.day);
     if (!S.profile.first_day || old.day < S.profile.first_day) touchProfileFirstDay(old.day);
   }
@@ -412,7 +428,8 @@ async function updateWakeLock(want) {
 
 /* ================= Interface ================= */
 let editingApp = null;       // app com o nome em edição
-let confirmRemove = null;    // app aguardando o segundo toque para remover
+let confirmRemove = null;    // app (ou "app|conta") aguardando o segundo toque para remover
+let addingAcc = null;        // app com a lista de plataformas aberta
 let confirmTimer = null;
 let rendering = false;
 
@@ -451,7 +468,10 @@ function accHTML(app, acc, now) {
     <div class="acc ${v.state}" data-acc="${id}">
       <div class="acc-top">
         <span class="acc-name">${ICONS[acc.key]}${acc.label}</span>
-        <span class="acc-state" data-state>${stateLabel}</span>
+        <span class="acc-right">
+          <span class="acc-state" data-state>${stateLabel}</span>
+          <button class="acc-remove ${confirmRemove === id ? 'confirm' : ''}" data-act="removeAcc" data-id="${id}" aria-label="Remover ${acc.label} deste app">${confirmRemove === id ? 'Remover?' : '✕'}</button>
+        </span>
       </div>
       <div class="timer" data-timer>${v.done ? 'Feita ✓' : fmtClock(GOAL - v.e)}</div>
       <div class="bar thin" role="progressbar" aria-label="Progresso ${acc.label}" aria-valuemin="0" aria-valuemax="30" aria-valuenow="${Math.floor(v.e / 60000)}"><i data-bar style="width:${(v.e / GOAL) * 100}%"></i></div>
@@ -460,8 +480,8 @@ function accHTML(app, acc, now) {
     </div>`;
 }
 
-function appDoneCount(row, appId, until) {
-  return ACCOUNTS.filter((acc) => isDone(getAcc(row, appId, acc.key), until)).length;
+function appDoneCount(row, app, until) {
+  return appAccounts(app).filter((acc) => isDone(getAcc(row, app.id, acc.key), until)).length;
 }
 
 function renderApps(now = Date.now()) {
@@ -472,8 +492,9 @@ function renderApps(now = Date.now()) {
   const focusedId = document.activeElement?.id;
 
   const html = S.profile.apps.map((app) => {
-    const n = appDoneCount(S.today, app.id, now);
-    const complete = n === ACCOUNTS.length;
+    const accs = appAccounts(app);
+    const n = appDoneCount(S.today, app, now);
+    const complete = accs.length > 0 && n === accs.length;
     const nameHTML = editingApp === app.id
       ? `<input class="app-name-input" id="name-${app.id}" type="text" value="${esc(app.name)}" maxlength="40" aria-label="Nome do app" data-name="${app.id}">`
       : `<button class="app-name" data-act="rename" data-app="${app.id}" title="Tocar para renomear">${esc(app.name)}<span class="pen">✎</span></button>`;
@@ -482,9 +503,10 @@ function renderApps(now = Date.now()) {
       <article class="card app ${complete ? 'complete' : ''}">
         <div class="app-head">
           ${nameHTML}
-          <span class="pill ${complete ? 'ok' : ''}" data-pill="${app.id}">${complete ? 'App completo' : `${n} de ${ACCOUNTS.length} contas`}</span>
+          <span class="pill ${complete ? 'ok' : ''}" data-pill="${app.id}">${complete ? 'App completo' : `${n} de ${accs.length} ${accs.length === 1 ? 'conta' : 'contas'}`}</span>
         </div>
-        <div class="accounts">${ACCOUNTS.map((acc) => accHTML(app, acc, now)).join('')}</div>
+        <div class="accounts">${accs.map((acc) => accHTML(app, acc, now)).join('') || '<p class="empty">Nenhuma conta neste app. Adicione abaixo.</p>'}</div>
+        ${addAccHTML(app, accs)}
         <div class="app-foot">
           <button class="btn small ${confirming ? 'remove confirm' : 'ghost remove'}" data-act="remove" data-app="${app.id}">${confirming ? 'Toque de novo para remover' : 'Remover app'}</button>
         </div>
@@ -504,11 +526,26 @@ function renderApps(now = Date.now()) {
   rendering = false;
 }
 
+function addAccHTML(app, accs) {
+  const missing = PLATFORMS.filter((p) => !accs.some((a) => a.key === p.key));
+  if (!missing.length) return '';
+  if (addingAcc !== app.id) {
+    return `<button class="btn small add-acc" data-act="openAddAcc" data-app="${app.id}">+ Adicionar conta</button>`;
+  }
+  return `
+    <div class="add-acc-panel">
+      <p>Qual plataforma este app tem?</p>
+      <div class="chips">${missing.map((p) => `<button class="btn small chip" data-act="addAcc" data-app="${app.id}" data-key="${p.key}">${ICONS[p.key]}${p.label}</button>`).join('')}</div>
+      <button class="btn small ghost" data-act="closeAddAcc">Cancelar</button>
+    </div>`;
+}
+
 function totals(now = Date.now()) {
   let done = 0, ms = 0;
-  const total = S.profile.apps.length * ACCOUNTS.length;
+  let total = 0;
   for (const app of S.profile.apps) {
-    for (const acc of ACCOUNTS) {
+    for (const acc of appAccounts(app)) {
+      total++;
       const e = elapsed(getAcc(S.today, app.id, acc.key), now);
       ms += e;
       if (e >= GOAL) done++;
@@ -544,12 +581,13 @@ function historyCard(row, live, now) {
   const apps = row.apps || [];
   let appsDone = 0;
   const items = apps.map((app) => {
-    const parts = ACCOUNTS.map((acc) => {
+    const accs = appAccounts(app);
+    const parts = accs.map((acc) => {
       const e = elapsed(getAcc(row, app.id, acc.key), until);
       const miss = Math.ceil((GOAL - e) / 60000);
       return e >= GOAL ? `${acc.label} completo` : `${acc.label} ${live ? 'faltam' : 'faltou'} ${miss} min`;
     });
-    const ok = appDoneCount(row, app.id, until) === ACCOUNTS.length;
+    const ok = accs.length > 0 && appDoneCount(row, app, until) === accs.length;
     if (ok) appsDone++;
     return `<li><span class="hname">${esc(app.name)}</span>${ok
       ? '<span class="hstat ok">✔ Feito</span>'
@@ -659,6 +697,35 @@ document.addEventListener('click', (ev) => {
     return;
   }
   if (act === 'logout') { logout(); return; }
+  if (act === 'openAddAcc') { addingAcc = btn.dataset.app; renderApps(); return; }
+  if (act === 'closeAddAcc') { addingAcc = null; renderApps(); return; }
+  if (act === 'addAcc') {
+    const app = S.profile.apps.find((a) => a.id === btn.dataset.app);
+    if (!app) return;
+    const keys = appAccounts(app).map((p) => p.key);
+    if (!keys.includes(btn.dataset.key)) keys.push(btn.dataset.key);
+    app.accounts = PLATFORMS.map((p) => p.key).filter((k) => keys.includes(k));
+    addingAcc = null;
+    touchProfile(); render();
+    return;
+  }
+  if (act === 'removeAcc') {
+    const id = btn.dataset.id;
+    if (confirmRemove === id) {
+      clearTimeout(confirmTimer); confirmRemove = null;
+      const [appId, key] = id.split('|');
+      const app = S.profile.apps.find((a) => a.id === appId);
+      if (!app) return;
+      app.accounts = appAccounts(app).map((p) => p.key).filter((k) => k !== key);
+      if (S.today.accounts[appId]) delete S.today.accounts[appId][key];
+      touchProfile(); render();
+    } else {
+      confirmRemove = id; renderApps();
+      clearTimeout(confirmTimer);
+      confirmTimer = setTimeout(() => { confirmRemove = null; renderApps(); }, 4000);
+    }
+    return;
+  }
 
   const [appId, key] = (btn.dataset.id || '').split('|');
   if (!actions[act] || !appId) return;
@@ -684,7 +751,7 @@ document.addEventListener('focusout', (ev) => {
 });
 
 $('#addApp').addEventListener('click', () => {
-  const app = { id: newId(), name: `App ${S.profile.apps.length + 1}` };
+  const app = { id: newId(), name: `App ${S.profile.apps.length + 1}`, accounts: [...DEFAULT_ACCOUNTS] };
   S.profile.apps.push(app);
   editingApp = app.id;
   touchProfile();
