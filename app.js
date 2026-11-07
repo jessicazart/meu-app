@@ -21,7 +21,9 @@ function appAccounts(app) {
 /** Retrato dos apps (nome e contas) para salvar no histórico do dia. */
 const snapApps = () => S.profile.apps.map((app) => ({ id: app.id, name: app.name, accounts: appAccounts(app).map((p) => p.key) }));
 // Apps iniciais — troque pelos seus (também dá para renomear tocando no nome).
-const DEFAULT_APPS = ['App 1', 'App 2', 'App 3', 'App 4'];
+const DEFAULT_APPS = ['Mise', 'Studley'];
+// Nomes da primeira versão: se a lista ainda estiver assim, sem uso, troca pelos apps acima.
+const OLD_DEFAULT_APPS = ['App 1', 'App 2', 'App 3', 'App 4'];
 const HISTORY_DAYS = 30;
 
 const ICONS = {
@@ -128,6 +130,18 @@ function loadCache() {
     (c.pendingDays || []).forEach((d) => pendingDays.add(d));
     return true;
   } catch { return false; }
+}
+/** Troca a lista inicial antiga (App 1…App 4) pelos apps reais, se ela nunca foi mexida nem usada. */
+function upgradeDefaultApps() {
+  const names = S.profile.apps.map((a) => a.name);
+  const untouched = names.length === OLD_DEFAULT_APPS.length && names.every((n, i) => n === OLD_DEFAULT_APPS[i])
+    && S.profile.apps.every((a) => !a.accounts || a.accounts.join() === DEFAULT_ACCOUNTS.join());
+  if (!untouched || hasActivity(S.today) || Object.values(S.history).some(hasActivity)) return;
+  S.profile.apps = DEFAULT_APPS.map((name) => ({ id: newId(), name, accounts: [...DEFAULT_ACCOUNTS] }));
+  S.today.accounts = {};
+  S.profile.updated_at = Date.now();
+  profileDirty = true;
+  saveCache();
 }
 function defaultProfile() {
   return {
@@ -822,6 +836,7 @@ function startApp() {
   if (!had || !S.profile.apps.length) {
     if (MODE === 'local') { S.profile = defaultProfile(); profileDirty = true; }
   }
+  upgradeDefaultApps();
   pruneHistory();
   $('#login').hidden = true;
   $('#main').hidden = false;
