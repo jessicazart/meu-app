@@ -46,7 +46,7 @@ Para testar no computador: `python3 -m http.server 8000` e abra http://localhost
 
 ## Apps iniciais
 
-Os apps começam como `Mise` e `Studley` (a lista `DEFAULT_APPS` fica no início do `app.js`). Para trocar o nome, toque nele.
+Os apps começam como `Mise` (Instagram, TikTok, Snapchat e Facebook) e `Studley` (Instagram, TikTok e Facebook) (a lista `DEFAULT_APPS` fica no início do `app.js`). Para trocar o nome, toque nele.
 
 ## Como funciona
 
